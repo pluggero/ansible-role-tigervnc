@@ -1,0 +1,137 @@
+---
+- name: Install tigervnc from source
+  block:
+    - name: Import installed tigervnc version check
+      ansible.builtin.include_tasks: noauto_check_installed_version.yml
+      when: tigervnc_installed_version is not defined
+
+    - name: Force install if the version numbers do not match
+      ansible.builtin.set_fact:
+        tigervnc_force_install: true
+      when:
+        - tigervnc_installed_version is defined
+        - tigervnc_installed_version != tigervnc_version
+
+    - name: Install tigervnc from source
+      when: tigervnc_installed_version is not defined or tigervnc_force_install
+      block:
+        - name: Uninstall current tigervnc installation
+          ansible.builtin.include_tasks: noauto_uninstall.yml
+          when: tigervnc_installed_version is defined and tigervnc_installed_version != ""
+
+        - name: Download tigervnc package
+          ansible.builtin.get_url:
+            url: "{{ tigervnc_download_url }}"
+            dest: "{{ tigervnc_download_dir }}"
+            mode: "0755"
+            owner: root
+            group: root
+            timeout: 60
+          become: true
+
+        - name: Ensure tigervnc installation folder exists
+          ansible.builtin.file:
+            path: "{{ tigervnc_install_path }}"
+            state: directory
+            mode: "0755"
+            owner: root
+            group: root
+          become: true
+
+        - name: Extract archive
+          ansible.builtin.unarchive:
+            src: "{{ tigervnc_download_dir }}/{{ tigervnc_archive_name }}"
+            dest: "{{ tigervnc_install_path }}"
+            remote_src: true
+            extra_opts: ["--strip-components=1"]
+            creates: "{{ tigervnc_install_path }}/usr/bin/vncviewer"
+          become: true
+
+        - name: Create TigerVNC symlinks
+          ansible.builtin.file:
+            src: "{{ tigervnc_install_path }}/{{ item.src }}"
+            dest: "/usr/{{ item.dest }}"
+            state: link
+            force: true
+            mode: "0755"
+            owner: root
+            group: root
+          loop:
+            - { src: "usr/bin/Xvnc", dest: "local/bin/Xvnc" }
+            - { src: "usr/bin/vncpasswd", dest: "local/bin/vncpasswd" }
+            - { src: "usr/bin/vncconfig", dest: "local/bin/vncconfig" }
+            - {
+                src: "usr/bin/vncviewer",
+                dest: "local/bin/{{ tigervnc_viewer_binary }}",
+              }
+            - { src: "usr/bin/x0vncserver", dest: "local/bin/x0vncserver" }
+            - { src: "usr/sbin/vncsession", dest: "sbin/vncsession" }
+            - { src: "usr/libexec/vncserver", dest: "local/libexec/vncserver" }
+            - {
+                src: "usr/libexec/vncsession-start",
+                dest: "local/libexec/vncsession-start",
+              }
+          become: true
+
+        - name: Ensure TigerVNC base config folder exists
+          ansible.builtin.file:
+            path: /etc/tigervnc
+            state: directory
+            mode: "0755"
+            owner: root
+            group: root
+          become: true
+
+        - name: Create TigerVNC base config
+          ansible.builtin.copy:
+            src: "{{ tigervnc_install_path }}/etc/tigervnc/{{ item }}"
+            dest: "/etc/tigervnc/{{ item }}"
+            mode: "0755"
+            owner: root
+            group: root
+            remote_src: true
+          loop:
+            - vncserver-config-defaults
+            - vncserver-config-mandatory
+            - vncserver.users
+          become: true
+
+        - name: Create TigerVNC pam config
+          ansible.builtin.copy:
+            src: "{{ tigervnc_install_path }}/etc/pam.d/tigervnc"
+            dest: "/etc/pam.d/tigervnc"
+            mode: "0644"
+            owner: root
+            group: root
+            remote_src: true
+          become: true
+
+        - name: Create shared library symlinks
+          ansible.builtin.file:
+            src: "{{ tigervnc_install_path }}/usr/lib64/{{ item }}"
+            dest: "/usr/local/lib/{{ item }}"
+            state: link
+            force: true
+            mode: "0755"
+            owner: root
+            group: root
+          loop:
+            - swrast_dri.so
+            - xorg
+          become: true
+
+        - name: Install man pages
+          ansible.builtin.copy:
+            src: "{{ tigervnc_install_path }}/usr/share/man/"
+            dest: "/usr/local/share/man/"
+            mode: "0644"
+            owner: root
+            group: root
+            remote_src: true
+          become: true
+
+        - name: Remove archive
+          ansible.builtin.file:
+            path: "{{ tigervnc_download_dir }}/{{ tigervnc_archive_name }}"
+            state: absent
+          become: true

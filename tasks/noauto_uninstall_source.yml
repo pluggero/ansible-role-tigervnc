@@ -1,0 +1,68 @@
+---
+- name: Uninstall tigervnc from source
+  block:
+    - name: Find existing tigervnc folder in {{ tigervnc_install_dir }}
+      ansible.builtin.find:
+        paths: "{{ tigervnc_install_dir }}"
+        patterns: "tigervnc-*"
+        file_type: directory
+      register: tigervnc_install_folder
+
+    - name: Remove existing tigervnc installation folder
+      ansible.builtin.file:
+        path: "{{ folder.path }}"
+        state: absent
+      loop: "{{ tigervnc_install_folder.files }}"
+      loop_control:
+        loop_var: folder
+      become: true
+
+    - name: Remove TigerVNC symlinks
+      ansible.builtin.file:
+        path: "/usr/{{ item }}"
+        state: absent
+      loop:
+        - local/bin/Xvnc
+        - local/bin/vncpasswd
+        - local/bin/vncconfig
+        - "local/bin/{{ tigervnc_viewer_binary }}"
+        - local/bin/x0vncserver
+        - sbin/vncsession
+        - libexec/vncserver
+        - libexec/vncsession-start
+      become: true
+
+    - name: Remove TigerVNC config folder
+      ansible.builtin.file:
+        path: "/etc/tigervnc"
+        state: absent
+      become: true
+
+    - name: Remove TigerVNC pam config
+      ansible.builtin.file:
+        path: "/etc/pam.d/tigervnc"
+        state: absent
+      become: true
+
+    - name: Remove shared library symlinks
+      ansible.builtin.file:
+        path: "/usr/local/lib/{{ item }}"
+        state: absent
+      loop:
+        - swrast_dri.so
+        - xorg
+      become: true
+
+    - name: Remove man pages
+      ansible.builtin.file:
+        path: "/usr/local/share/man/{{ item }}"
+        state: absent
+      loop:
+        - man1/Xvnc.1
+        - man1/vncconfig.1
+        - man1/vncpasswd.1
+        - man1/vncviewer.1
+        - man1/x0vncserver.1
+        - man8/vncserver.8
+        - man8/vncsession.8
+      become: true

@@ -2,14 +2,14 @@
 
 [Unit]
 Description=Remote desktop service (VNC) 
-After=syslog.target network.target
+After=network.target systemd-user-sessions.service
 
 [Service]
 Type=simple
 User={{ tigervnc_user }}
-ExecStartPre=-/bin/sh -c 'if pgrep -f "{{ tigervnc_server_binary }}.*:%i" > /dev/null; then {{ tigervnc_server_binary }} -kill :%i; fi'
+ExecStartPre=-{{ tigervnc_server_binary }} -kill %i
 ExecStart={{ tigervnc_server_binary }} :%i -fg
-ExecStop={{ tigervnc_server_binary }} -kill :%i
+ExecStop={{ tigervnc_server_binary }} -kill %i
 PIDFile=/home/%u/.vnc/%H%i.pid
 Restart=on-failure
 RestartSec=5

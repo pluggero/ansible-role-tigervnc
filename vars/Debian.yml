@@ -1,5 +1,7 @@
 ---
 tigervnc_dep_pkgs:
+  - tar
+  - unzip
   - xterm
   - dbus-x11
 
@@ -8,5 +10,5 @@ tigervnc_distro_pkgs:
   - tigervnc-xorg-extension
   - tigervnc-viewer
 
-tigervnc_viewer_binary: "/usr/bin/xtigervncviewer"
-tigervnc_server_binary: "/usr/bin/tigervncserver"
+tigervnc_viewer_binary: "xtigervncviewer"
+tigervnc_server_binary: "tigervncserver"

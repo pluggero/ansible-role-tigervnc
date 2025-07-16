@@ -1,10 +1,13 @@
 ---
 tigervnc_dep_pkgs:
+  - tar
+  - unzip
   - xterm
   - dbus
 
 tigervnc_distro_pkgs:
   - tigervnc
 
-tigervnc_viewer_binary: "/usr/bin/vncviewer"
-tigervnc_server_binary: "/usr/bin/vncserver"
+tigervnc_viewer_binary: "vncviewer"
+tigervnc_server_binary: "vncserver"
+tigervnc_server_binary_path: "/usr/bin/{{ tigervnc_server_binary }}"

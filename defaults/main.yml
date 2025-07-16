@@ -2,8 +2,17 @@
 tigervnc_config_dir: "{{ ansible_env.HOME }}/.config/tigervnc"
 tigervnc_config_file: "{{ tigervnc_config_dir }}/config"
 
-tigervnc_install_method: "package"
+tigervnc_version: "1.15.0"
+tigervnc_install_method: "dynamic"
 tigervnc_force_install: false
+
+tigervnc_download_base_url: "https://sourceforge.net/projects/tigervnc/files/stable/{{ tigervnc_version }}"
+tigervnc_archive_name: "tigervnc-{{ tigervnc_version }}.x86_64.tar.gz"
+tigervnc_download_url: "{{ tigervnc_download_base_url }}/{{ tigervnc_archive_name }}/download"
+tigervnc_download_dir: "/tmp"
+
+tigervnc_install_dir: "/opt"
+tigervnc_install_path: "{{ tigervnc_install_dir }}/tigervnc-{{ tigervnc_version }}"
 
 tigervnc_user: "{{ ansible_user }}"
 tigervnc_group: "{{ ansible_user }}"

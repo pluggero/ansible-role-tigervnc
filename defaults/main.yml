@@ -1,0 +1,22 @@
+---
+tigervnc_config_dir: "{{ ansible_env.HOME }}/.config/tigervnc"
+tigervnc_config_file: "{{ tigervnc_config_dir }}/config"
+
+tigervnc_install_method: "package"
+tigervnc_force_install: false
+
+tigervnc_user: "{{ ansible_user }}"
+tigervnc_group: "{{ ansible_user }}"
+tigervnc_password: ""
+tigervnc_display: "4"
+tigervnc_session: "xterm"
+tigervnc_session_command: "xterm"
+tigervnc_config_content:
+  - "session={{ tigervnc_session }}"
+  - "localhost"
+  - "securitytypes=none"
+  - "alwaysshared"
+
+tigervnc_service_manage: false # If the service should managed by ansible
+tigervnc_service_enabled: false
+tigervnc_service_name: "vncserver@{{ tigervnc_display }}.service"

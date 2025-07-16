@@ -1,0 +1,43 @@
+---
+- name: Install tigervnc OS-specifically via package
+  block:
+    - name: Import installed tigervnc version check
+      ansible.builtin.include_tasks: noauto_check_installed_version.yml
+      when: tigervnc_installed_version is not defined
+
+    - name: Check tigervnc pkg mgr version
+      ansible.builtin.include_tasks: "{{ task_file }}"
+      with_first_found:
+        - "noauto_check_pkg_mgr_version_{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+        - "noauto_check_pkg_mgr_version_{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yml"
+        - "noauto_check_pkg_mgr_version_{{ ansible_distribution }}.yml"
+        - "noauto_check_pkg_mgr_version_{{ ansible_os_family }}.yml"
+        - "noauto_check_pkg_mgr_version_{{ ansible_lsb.id }}.yml"
+      loop_control:
+        loop_var: task_file
+
+    - name: Force install if the version numbers do not match
+      ansible.builtin.set_fact:
+        tigervnc_force_install: true
+      when:
+        - tigervnc_installed_version is defined
+        - tigervnc_pkg_mgr_version is defined
+        - tigervnc_installed_version != tigervnc_pkg_mgr_version
+
+    - name: Install tigervnc package
+      when: tigervnc_installed_version is not defined or tigervnc_force_install
+      block:
+        - name: Uninstall current tigervnc installation
+          ansible.builtin.include_tasks: noauto_uninstall.yml
+          when: tigervnc_installed_version is defined and tigervnc_installed_version != ""
+
+        - name: Install tigervnc OS-specifically via package
+          ansible.builtin.include_tasks: "{{ task_file }}"
+          with_first_found:
+            - "noauto_install_{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+            - "noauto_install_{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yml"
+            - "noauto_install_{{ ansible_distribution }}.yml"
+            - "noauto_install_{{ ansible_os_family }}.yml"
+            - "noauto_install_{{ ansible_lsb.id }}.yml"
+          loop_control:
+            loop_var: task_file

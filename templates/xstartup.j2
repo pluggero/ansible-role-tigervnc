@@ -1,0 +1,5 @@
+#!/bin/sh
+
+{{ ansible_managed | comment }}
+
+dbus-launch --exit-with-session {{ tigervnc_session_command }}

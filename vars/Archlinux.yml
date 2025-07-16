@@ -1,0 +1,10 @@
+---
+tigervnc_dep_pkgs:
+  - xterm
+  - dbus
+
+tigervnc_distro_pkgs:
+  - tigervnc
+
+tigervnc_viewer_binary: "/usr/bin/vncviewer"
+tigervnc_server_binary: "/usr/bin/vncserver"

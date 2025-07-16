@@ -1,0 +1,17 @@
+---
+- name: Check installed tigervnc version
+  block:
+    - name: Get installed tigervnc version
+      ansible.builtin.command:
+        cmd: "{{ tigervnc_viewer_binary }} --help"
+      changed_when: false
+      failed_when: false
+      register: tigervnc_installed_version_cmd
+
+    - name: Extract only the version into a variable
+      ansible.builtin.set_fact:
+        tigervnc_installed_version: "{{ tigervnc_installed_version_cmd.stderr | regex_replace('(?s).*?TigerVNC\\s+[vV]iewer(?:\\s+64-bit)?\\s+v([0-9]+\\.[0-9]+\\.[0-9]+).*', '\\1') }}"
+
+    - name: Debug installed tigervnc version
+      ansible.builtin.debug:
+        var: tigervnc_installed_version

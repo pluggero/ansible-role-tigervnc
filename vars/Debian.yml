@@ -1,0 +1,12 @@
+---
+tigervnc_dep_pkgs:
+  - xterm
+  - dbus-x11
+
+tigervnc_distro_pkgs:
+  - tigervnc-standalone-server
+  - tigervnc-xorg-extension
+  - tigervnc-viewer
+
+tigervnc_viewer_binary: "/usr/bin/xtigervncviewer"
+tigervnc_server_binary: "/usr/bin/tigervncserver"

@@ -1,0 +1,16 @@
+---
+- name: Uninstall current installation of tigervnc
+  block:
+    - name: Uninstall tigervnc OS-specifically from package manager
+      ansible.builtin.include_tasks: "{{ task_file }}"
+      with_first_found:
+        - "noauto_uninstall_{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+        - "noauto_uninstall_{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yml"
+        - "noauto_uninstall_{{ ansible_distribution }}.yml"
+        - "noauto_uninstall_{{ ansible_os_family }}.yml"
+        - "noauto_uninstall_{{ ansible_lsb.id }}.yml"
+      loop_control:
+        loop_var: task_file
+
+    - name: Import installed tigervnc version check
+      ansible.builtin.include_tasks: noauto_check_installed_version.yml

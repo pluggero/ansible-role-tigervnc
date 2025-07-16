@@ -1,0 +1,19 @@
+---
+- name: Converge
+  hosts: all
+
+  vars:
+    ansible_user: vagrant
+    tigervnc_service_enabled: true
+    tigervnc_service_manage: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+      become: true
+      when: ansible_os_family == 'Debian'
+
+  roles:
+    - role: pluggero.tigervnc

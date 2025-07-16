@@ -1,0 +1,18 @@
+{{ ansible_managed | comment }}
+
+[Unit]
+Description=Remote desktop service (VNC) 
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User={{ tigervnc_user }}
+ExecStartPre=-/bin/sh -c 'if pgrep -f "{{ tigervnc_server_binary }}.*:%i" > /dev/null; then {{ tigervnc_server_binary }} -kill :%i; fi'
+ExecStart={{ tigervnc_server_binary }} :%i -fg
+ExecStop={{ tigervnc_server_binary }} -kill :%i
+PIDFile=/home/%u/.vnc/%H%i.pid
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -13,6 +13,9 @@
 
     - name: Ensure tigervnc dependencies are installed
       community.general.pacman:
-        name: "{{ tigervnc_dep_pkgs }}"
+        name: "{{ package }}"
         state: present
+      loop: "{{ tigervnc_dep_pkgs }}"
+      loop_control:
+        loop_var: package
       become: true

@@ -1,14 +1,28 @@
 ---
+# =============================================================================
+# DEBIAN/UBUNTU SPECIFIC CONFIGURATION
+# =============================================================================
+
+# Package dependencies
 tigervnc_dep_pkgs:
   - tar
   - unzip
   - xterm
   - dbus-x11
+  - openssl
+  - coreutils
+  - libfile-readbackwards-perl
+  - xauth
+  - libxcvt0
+  - x11-xkb-utils
 
+# TigerVNC packages for Debian/Ubuntu
 tigervnc_distro_pkgs:
   - tigervnc-standalone-server
   - tigervnc-xorg-extension
   - tigervnc-viewer
 
-tigervnc_viewer_binary: "xtigervncviewer"
-tigervnc_server_binary: "tigervncserver"
+# Binary names
+tigervnc_passwd_bin: "tigervncpasswd"
+tigervnc_viewer_bin: "xtigervncviewer"
+tigervnc_server_bin: "Xtigervnc"

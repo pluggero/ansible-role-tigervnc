@@ -1,0 +1,56 @@
+---
+- name: Deploy Perl TigerVNC wrapper and modules
+  block:
+    - name: Ensure required Perl modules directory exists
+      ansible.builtin.file:
+        path: /usr/local/lib/perl5/TigerVNC
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root
+      become: true
+
+    - name: Deploy TigerVNC Perl modules (template files)
+      ansible.builtin.template:
+        src: "{{ item.src }}"
+        dest: /usr/local/lib/perl5/TigerVNC/{{ item.dest }}
+        mode: "0644"
+        owner: root
+        group: root
+      become: true
+      loop:
+        - src: "Common.pm.j2"
+          dest: "Common.pm"
+        - src: "Config.pm.j2"
+          dest: "Config.pm"
+        - src: "Wrapper.pm.j2"
+          dest: "Wrapper.pm"
+
+    - name: Deploy TigerVNC Perl modules (static files)
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: "/usr/local/lib/perl5/TigerVNC/{{ item }}"
+        mode: "0644"
+        owner: root
+        group: root
+      become: true
+      loop:
+        - OptionTie.pm
+
+    - name: Deploy main TigerVNC Perl wrapper script
+      ansible.builtin.template:
+        src: tigervnc_wrapper.j2
+        dest: /usr/local/bin/tigervnc_wrapper
+        mode: "0755"
+        owner: root
+        group: root
+      become: true
+
+    - name: Ensure system configuration directory exists
+      ansible.builtin.file:
+        path: /etc/tigervnc
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root
+      become: true

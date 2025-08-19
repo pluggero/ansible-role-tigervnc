@@ -3,7 +3,7 @@
   block:
     - name: Get installed tigervnc version
       ansible.builtin.command:
-        cmd: "{{ tigervnc_viewer_binary }} --help"
+        cmd: "{{ tigervnc_viewer_bin }} --help"
       changed_when: false
       failed_when: false
       register: tigervnc_installed_version_cmd

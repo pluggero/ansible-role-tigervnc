@@ -47,6 +47,19 @@
             creates: "{{ tigervnc_install_path }}/usr/bin/vncviewer"
           become: true
 
+        - name: Set binary directory for source installation
+          ansible.builtin.set_fact:
+            tigervnc_bin_dir: "/usr/local/bin"
+
+        - name: Ensure libexec folder exists
+          ansible.builtin.file:
+            path: "/usr/local/libexec"
+            state: directory
+            mode: "0755"
+            owner: root
+            group: root
+          become: true
+
         - name: Create TigerVNC symlinks
           ansible.builtin.file:
             src: "{{ tigervnc_install_path }}/{{ item.src }}"
@@ -57,20 +70,22 @@
             owner: root
             group: root
           loop:
-            - { src: "usr/bin/Xvnc", dest: "local/bin/Xvnc" }
-            - { src: "usr/bin/vncpasswd", dest: "local/bin/vncpasswd" }
-            - { src: "usr/bin/vncconfig", dest: "local/bin/vncconfig" }
-            - {
-                src: "usr/bin/vncviewer",
-                dest: "local/bin/{{ tigervnc_viewer_binary }}",
-              }
-            - { src: "usr/bin/x0vncserver", dest: "local/bin/x0vncserver" }
-            - { src: "usr/sbin/vncsession", dest: "sbin/vncsession" }
-            - { src: "usr/libexec/vncserver", dest: "local/libexec/vncserver" }
-            - {
-                src: "usr/libexec/vncsession-start",
-                dest: "local/libexec/vncsession-start",
-              }
+            - src: "usr/bin/Xvnc"
+              dest: "local/bin/{{ tigervnc_server_bin }}"
+            - src: "usr/bin/vncpasswd"
+              dest: "local/bin/{{ tigervnc_passwd_bin }}"
+            - src: "usr/bin/vncconfig"
+              dest: "local/bin/vncconfig"
+            - src: "usr/bin/vncviewer"
+              dest: "local/bin/{{ tigervnc_viewer_bin }}"
+            - src: "usr/bin/x0vncserver"
+              dest: "local/bin/x0vncserver"
+            - src: "usr/sbin/vncsession"
+              dest: "sbin/vncsession"
+            - src: "usr/libexec/vncserver"
+              dest: "local/libexec/vncserver"
+            - src: "usr/libexec/vncsession-start"
+              dest: "local/libexec/vncsession-start"
           become: true
 
         - name: Ensure TigerVNC base config folder exists

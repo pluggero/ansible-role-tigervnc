@@ -22,10 +22,10 @@
         path: "/usr/{{ item }}"
         state: absent
       loop:
-        - local/bin/Xvnc
-        - local/bin/vncpasswd
+        - "local/bin/{{ tigervnc_server_bin }}"
+        - "local/bin/{{ tigervnc_passwd_bin }}"
         - local/bin/vncconfig
-        - "local/bin/{{ tigervnc_viewer_binary }}"
+        - "local/bin/{{ tigervnc_viewer_bin }}"
         - local/bin/x0vncserver
         - sbin/vncsession
         - libexec/vncserver

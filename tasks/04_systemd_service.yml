@@ -8,7 +8,7 @@
 
     - name: Ensure systemd service file exists
       ansible.builtin.template:
-        src: "{{ 'vncserver-source.service.j2' if (tigervnc_install_method == 'source' or tigervnc_source_check.stat.exists) else 'vncserver.service.j2' }}"
+        src: vncserver.service.j2
         dest: "/etc/systemd/system/{{ tigervnc_service_name }}"
         mode: "0744"
       become: true

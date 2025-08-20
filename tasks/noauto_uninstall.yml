@@ -14,3 +14,7 @@
 
     - name: Import installed tigervnc version check
       ansible.builtin.include_tasks: noauto_check_installed_version.yml
+
+    - name: Uninstall tigervnc from source
+      ansible.builtin.include_tasks: noauto_uninstall_source.yml
+      when: tigervnc_installed_version is defined and tigervnc_installed_version != ""

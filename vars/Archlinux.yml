@@ -1,13 +1,28 @@
 ---
+# =============================================================================
+# ARCH LINUX SPECIFIC CONFIGURATION
+# =============================================================================
+
+# Package dependencies
 tigervnc_dep_pkgs:
   - tar
   - unzip
   - xterm
   - dbus
+  - openssl
+  - coreutils
+  - perl-file-readbackwards
+  - xorg-xauth
+  - libxcvt
+  - xorg-xkbcomp
+  - xkeyboard-config
+  - inetutils
 
+# TigerVNC packages for Arch Linux
 tigervnc_distro_pkgs:
   - tigervnc
 
-tigervnc_viewer_binary: "vncviewer"
-tigervnc_server_binary: "vncserver"
-tigervnc_server_binary_path: "/usr/bin/{{ tigervnc_server_binary }}"
+# Binary names
+tigervnc_passwd_bin: "vncpasswd"
+tigervnc_viewer_bin: "vncviewer"
+tigervnc_server_bin: "Xvnc"

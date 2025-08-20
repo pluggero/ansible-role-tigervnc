@@ -7,10 +7,10 @@ After=network.target systemd-user-sessions.service
 [Service]
 Type=simple
 User={{ tigervnc_user }}
-ExecStartPre=-{{ tigervnc_server_binary }} -kill %i
-ExecStart={{ tigervnc_server_binary }} :%i -fg
-ExecStop={{ tigervnc_server_binary }} -kill %i
-PIDFile=/home/%u/.vnc/%H%i.pid
+ExecStartPre=-/usr/local/bin/tigervnc_wrapper -kill :%i
+ExecStart=/usr/local/bin/tigervnc_wrapper :%i -fg
+ExecStop=/usr/local/bin/tigervnc_wrapper -kill :%i
+PIDFile={{ tigervnc_config_dir }}/{{ ansible_fqdn }}:%i.pid
 Restart=on-failure
 RestartSec=5
 

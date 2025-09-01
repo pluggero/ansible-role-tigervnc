@@ -1,11 +1,6 @@
 ---
 - name: Configure systemd service for TigerVNC
   block:
-    - name: Determine if TigerVNC was installed from source
-      ansible.builtin.stat:
-        path: /usr/local/libexec/vncsession-start
-      register: tigervnc_source_check
-
     - name: Ensure systemd service file exists
       ansible.builtin.template:
         src: vncserver.service.j2

@@ -19,10 +19,258 @@
           paths:
             - "../../vars"
 
-    - name: Check installed version
-      ansible.builtin.include_tasks: "../../tasks/noauto_check_installed_version.yml"
+    - name: Verify TigerVNC Installation
+      tags: [verify_installation]
+      block:
+        - name: Check installed version
+          ansible.builtin.include_tasks: "../../tasks/noauto_check_installed_version.yml"
 
-    - name: Assert installed version is correct
-      ansible.builtin.assert:
-        that:
-          - "tigervnc_installed_version == tigervnc_version"
+        - name: Assert installed version is correct
+          ansible.builtin.assert:
+            that:
+              - "tigervnc_installed_version == tigervnc_version"
+            fail_msg: "TigerVNC version mismatch: expected {{ tigervnc_version }}, found {{ tigervnc_installed_version }}"
+            success_msg: "TigerVNC version {{ tigervnc_version }} is correctly installed"
+
+        - name: Check TigerVNC binaries are in PATH
+          ansible.builtin.command:
+            cmd: "which {{ item }}"
+          register: tigervnc_binaries_which
+          changed_when: false
+          failed_when: false
+          loop:
+            - "{{ tigervnc_viewer_bin }}"
+            - "{{ tigervnc_server_bin }}"
+            - "{{ tigervnc_passwd_bin }}"
+
+        - name: Assert all TigerVNC binaries are available in PATH
+          ansible.builtin.assert:
+            that:
+              - item.rc == 0
+            fail_msg: "Binary {{ item.item }} is not found in PATH"
+            success_msg: "Binary {{ item.item }} is available in PATH"
+          loop: "{{ tigervnc_binaries_which.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+
+    - name: Verify TigerVNC Configuration
+      tags: [verify_configuration]
+      block:
+        - name: Check config directory exists
+          ansible.builtin.stat:
+            path: "{{ tigervnc_config_dir }}"
+          register: tigervnc_config_dir_stat
+
+        - name: Assert config directory exists with correct permissions
+          ansible.builtin.assert:
+            that:
+              - tigervnc_config_dir_stat.stat.exists
+              - tigervnc_config_dir_stat.stat.isdir
+              - tigervnc_config_dir_stat.stat.mode == '0744'
+            fail_msg: "Config directory {{ tigervnc_config_dir }} is missing or has incorrect permissions"
+            success_msg: "Config directory {{ tigervnc_config_dir }} exists with correct permissions"
+
+        - name: Check config file exists
+          ansible.builtin.stat:
+            path: "{{ tigervnc_config_file }}"
+          register: tigervnc_config_file_stat
+
+        - name: Assert config file exists with correct permissions
+          ansible.builtin.assert:
+            that:
+              - tigervnc_config_file_stat.stat.exists
+              - tigervnc_config_file_stat.stat.isreg
+              - tigervnc_config_file_stat.stat.mode == '0755'
+            fail_msg: "Config file {{ tigervnc_config_file }} is missing or has incorrect permissions"
+            success_msg: "Config file {{ tigervnc_config_file }} exists with correct permissions"
+
+        - name: Check xstartup file exists
+          ansible.builtin.stat:
+            path: "{{ tigervnc_config_dir }}/xstartup"
+          register: tigervnc_xstartup_stat
+
+        - name: Assert xstartup file exists with correct permissions
+          ansible.builtin.assert:
+            that:
+              - tigervnc_xstartup_stat.stat.exists
+              - tigervnc_xstartup_stat.stat.isreg
+              - tigervnc_xstartup_stat.stat.mode == '0755'
+            fail_msg: "xstartup file is missing or has incorrect permissions"
+            success_msg: "xstartup file exists with correct permissions"
+
+        - name: Verify config file content
+          ansible.builtin.slurp:
+            path: "{{ tigervnc_config_file }}"
+          register: tigervnc_config_content
+
+        - name: Assert config file contains expected settings
+          ansible.builtin.assert:
+            that:
+              - "'session=' + tigervnc_config_session in tigervnc_config_content.content | b64decode"
+              - "tigervnc_config_localhost | bool == ('localhost' in tigervnc_config_content.content | b64decode)"
+              - "'securitytypes=' + tigervnc_config_securitytypes in tigervnc_config_content.content | b64decode"
+              - "tigervnc_config_alwaysshared | bool == ('alwaysshared' in tigervnc_config_content.content | b64decode)"
+            fail_msg: "Config file is missing expected settings"
+            success_msg: "Config file contains all expected settings"
+
+        - name: Check VNC password file when password is set
+          ansible.builtin.stat:
+            path: "{{ tigervnc_config_dir }}/passwd"
+          register: tigervnc_passwd_stat
+          when: tigervnc_password | length > 0
+
+        - name: Assert password file exists with secure permissions when password is set
+          ansible.builtin.assert:
+            that:
+              - tigervnc_passwd_stat.stat.exists
+              - tigervnc_passwd_stat.stat.mode == '0600'
+            fail_msg: "Password file is missing or has insecure permissions"
+            success_msg: "Password file exists with secure permissions (0600)"
+          when: tigervnc_password | length > 0
+
+        - name: Check vncserver.users file exists
+          ansible.builtin.stat:
+            path: /etc/tigervnc/vncserver.users
+          register: tigervnc_users_file_stat
+          become: true
+
+        - name: Assert vncserver.users file exists
+          ansible.builtin.assert:
+            that:
+              - tigervnc_users_file_stat.stat.exists
+            fail_msg: "vncserver.users file is missing"
+            success_msg: "vncserver.users file exists"
+
+        - name: Verify user to display mapping in vncserver.users
+          ansible.builtin.lineinfile:
+            path: /etc/tigervnc/vncserver.users
+            line: ":{{ tigervnc_display }}={{ tigervnc_user }}"
+            state: present
+          check_mode: true
+          register: tigervnc_user_mapping
+          become: true
+
+        - name: Assert user to display mapping is present
+          ansible.builtin.assert:
+            that:
+              - not tigervnc_user_mapping.changed
+            fail_msg: "User to display mapping ':{{ tigervnc_display }}={{ tigervnc_user }}' is missing from vncserver.users"
+            success_msg: "User to display mapping is correctly configured"
+
+    - name: Verify TigerVNC Service Configuration
+      tags: [verify_service]
+      when: tigervnc_service_manage | bool
+      block:
+        - name: Check systemd service file exists
+          ansible.builtin.stat:
+            path: "/etc/systemd/system/{{ tigervnc_service_name }}"
+          register: tigervnc_service_file_stat
+          become: true
+
+        - name: Assert systemd service file exists
+          ansible.builtin.assert:
+            that:
+              - tigervnc_service_file_stat.stat.exists
+            fail_msg: "Systemd service file {{ tigervnc_service_name }} is missing"
+            success_msg: "Systemd service file {{ tigervnc_service_name }} exists"
+
+        - name: Get service enabled state
+          ansible.builtin.systemd_service:
+            name: "{{ tigervnc_service_name }}"
+          register: tigervnc_service_info
+          become: true
+
+        - name: Assert service enabled state matches configuration
+          ansible.builtin.assert:
+            that:
+              - tigervnc_service_info.status.UnitFileState == ('enabled' if tigervnc_service_enabled else 'disabled')
+            fail_msg: "Service enabled state does not match expected configuration (expected: {{ 'enabled' if tigervnc_service_enabled else 'disabled' }})"
+            success_msg: "Service enabled state matches configuration"
+
+        - name: Get service running state
+          ansible.builtin.systemd_service:
+            name: "{{ tigervnc_service_name }}"
+          register: tigervnc_service_status
+          become: true
+
+        - name: Assert service running state matches configuration when enabled
+          ansible.builtin.assert:
+            that:
+              - tigervnc_service_status.status.ActiveState == 'active'
+            fail_msg: "Service is not running but should be (enabled: {{ tigervnc_service_enabled }})"
+            success_msg: "Service is running as expected"
+          when: tigervnc_service_enabled | bool
+
+        - name: Assert service is stopped when disabled
+          ansible.builtin.assert:
+            that:
+              - tigervnc_service_status.status.ActiveState in ['inactive', 'failed']
+            fail_msg: "Service is running but should be stopped (enabled: {{ tigervnc_service_enabled }})"
+            success_msg: "Service is stopped as expected"
+          when: not (tigervnc_service_enabled | bool)
+
+    - name: Verify Package Dependencies
+      tags: [verify_dependencies]
+      block:
+        - name: Check required Perl modules directory exists
+          ansible.builtin.stat:
+            path: /usr/local/lib/perl5/TigerVNC
+          register: tigervnc_perl_dir_stat
+          become: true
+
+        - name: Assert Perl modules directory exists
+          ansible.builtin.assert:
+            that:
+              - tigervnc_perl_dir_stat.stat.exists
+              - tigervnc_perl_dir_stat.stat.isdir
+            fail_msg: "TigerVNC Perl modules directory is missing"
+            success_msg: "TigerVNC Perl modules directory exists"
+
+        - name: Check TigerVNC Perl wrapper exists
+          ansible.builtin.stat:
+            path: /usr/local/bin/tigervnc_wrapper
+          register: tigervnc_wrapper_stat
+          become: true
+
+        - name: Assert TigerVNC Perl wrapper exists and is executable
+          ansible.builtin.assert:
+            that:
+              - tigervnc_wrapper_stat.stat.exists
+              - tigervnc_wrapper_stat.stat.executable
+            fail_msg: "TigerVNC Perl wrapper is missing or not executable"
+            success_msg: "TigerVNC Perl wrapper exists and is executable"
+
+        - name: Check required Perl modules exist
+          ansible.builtin.stat:
+            path: "/usr/local/lib/perl5/TigerVNC/{{ item }}"
+          register: tigervnc_perl_modules_stat
+          become: true
+          loop:
+            - Common.pm
+            - Config.pm
+            - Wrapper.pm
+            - OptionTie.pm
+
+        - name: Assert all required Perl modules are present
+          ansible.builtin.assert:
+            that:
+              - item.stat.exists
+            fail_msg: "Perl module {{ item.item }} is missing"
+            success_msg: "Perl module {{ item.item }} exists"
+          loop: "{{ tigervnc_perl_modules_stat.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+
+        - name: Verify system configuration directory exists
+          ansible.builtin.stat:
+            path: /etc/tigervnc
+          register: tigervnc_etc_dir_stat
+          become: true
+
+        - name: Assert system configuration directory exists
+          ansible.builtin.assert:
+            that:
+              - tigervnc_etc_dir_stat.stat.exists
+              - tigervnc_etc_dir_stat.stat.isdir
+            fail_msg: "System configuration directory /etc/tigervnc is missing"
+            success_msg: "System configuration directory /etc/tigervnc exists"

@@ -34,8 +34,12 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^defaults/main\\.yml$"],
-      "matchStrings": ["tigervnc_version:\\s+\"(?<currentValue>[\\d\\.]+)\""],
+      "managerFilePatterns": [
+        "/^defaults/main\\.yml$/"
+      ],
+      "matchStrings": [
+        "tigervnc_version:\\s+\"(?<currentValue>[\\d\\.]+)\""
+      ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "TigerVNC/tigervnc",
       "versioningTemplate": "semver"

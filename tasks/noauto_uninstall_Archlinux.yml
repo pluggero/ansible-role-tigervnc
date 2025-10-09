@@ -13,6 +13,9 @@
 
     - name: Remove tigervnc if it is installed
       community.general.pacman:
-        name: "{{ tigervnc_distro_pkgs }}"
+        name: "{{ package }}"
         state: absent
+      loop: "{{ tigervnc_distro_pkgs }}"
+      loop_control:
+        loop_var: package
       become: true

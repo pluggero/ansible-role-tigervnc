@@ -53,7 +53,7 @@ jobs:
             vagrant_box_version: "1.4.0"
     env:
       VBOX_BRANCH: "7.1"
-      VBOX_VERSION: "7.1.10"
+      VBOX_VERSION: "7.1.12"
       VBOX_DEB_DISTRO: "Ubuntu"
       VBOX_DEB_CODENAME: "noble"
 

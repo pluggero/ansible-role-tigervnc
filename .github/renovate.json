@@ -7,12 +7,18 @@
   "automergeType": "pr",
   "packageRules": [
     {
-      "matchManagers": ["github-actions", "pip_requirements"],
+      "matchManagers": [
+        "github-actions",
+        "pip_requirements"
+      ],
       "automerge": true,
       "automergeType": "pr"
     },
     {
-      "matchManagers": ["custom.regex", "ansible-galaxy"],
+      "matchManagers": [
+        "custom.regex",
+        "ansible-galaxy"
+      ],
       "automerge": false
     }
   ],
@@ -22,8 +28,22 @@
     "custom.regex",
     "ansible-galaxy"
   ],
-  "assignees": ["pluggero"],
+  "assignees": [
+    "pluggero"
+  ],
   "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^defaults/main\\.yml$/"
+      ],
+      "matchStrings": [
+        "tigervnc_version:\\s+\"(?<currentValue>[\\d\\.]+)\""
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "TigerVNC/tigervnc",
+      "versioningTemplate": "semver"
+    },
     {
       "customType": "regex",
       "managerFilePatterns": [

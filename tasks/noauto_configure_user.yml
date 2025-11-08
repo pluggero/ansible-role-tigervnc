@@ -1,0 +1,99 @@
+---
+- name: "Configure VNC for user {{ vnc_user.username }}"
+  block:
+    - name: "Ensure config folder exists for {{ vnc_user.username }}"
+      ansible.builtin.file:
+        path: "/home/{{ vnc_user.username }}/.config/tigervnc"
+        state: directory
+        mode: "0744"
+        owner: "{{ vnc_user.username }}"
+        group: "{{ vnc_user.username }}"
+      become: true
+
+    - name: "Add tigervnc config file for {{ vnc_user.username }}"
+      ansible.builtin.template:
+        src: "config.j2"
+        dest: "/home/{{ vnc_user.username }}/.config/tigervnc/config"
+        mode: "0755"
+        owner: "{{ vnc_user.username }}"
+        group: "{{ vnc_user.username }}"
+      become: true
+      notify: Restart TigerVNC
+      vars:
+        user_session: "{{ vnc_user.session_command | default(tigervnc_default_session_command) }}"
+        user_localhost: "{{ vnc_user.localhost | default(tigervnc_default_localhost) }}"
+        user_securitytypes: "{{ vnc_user.securitytypes | default(tigervnc_default_securitytypes) }}"
+        user_alwaysshared: "{{ vnc_user.alwaysshared | default(tigervnc_default_alwaysshared) }}"
+        user_config_additional: "{{ vnc_user.config_additional | default([]) }}"
+
+    - name: "Add tigervnc startup config file for {{ vnc_user.username }}"
+      ansible.builtin.template:
+        src: "xstartup.j2"
+        dest: "/home/{{ vnc_user.username }}/.config/tigervnc/xstartup"
+        mode: "0755"
+        owner: "{{ vnc_user.username }}"
+        group: "{{ vnc_user.username }}"
+      become: true
+      notify: Restart TigerVNC
+      vars:
+        user_session_command: "{{ vnc_user.session_command | default(tigervnc_default_session_command) }}"
+
+    - name: Set VNC password for {{ vnc_user.username }}
+      when: vnc_user.password is defined and vnc_user.password | length > 0
+      block:
+        - name: Validate VNC password length for {{ vnc_user.username }}
+          ansible.builtin.fail:
+            msg: "VNC password for user {{ vnc_user.username }} must be between 6 and 8 characters (VNC protocol limitation). Current length: {{ vnc_user.password | length }}"
+          when: vnc_user.password | length < 6 or vnc_user.password | length > 8
+
+        - name: Check if password file exists for {{ vnc_user.username }}
+          ansible.builtin.stat:
+            path: "/home/{{ vnc_user.username }}/.config/tigervnc/passwd"
+            get_checksum: true
+            checksum_algorithm: sha256
+          register: passwd_file_stat
+          become: true
+
+        - name: Generate new password to temporary file for comparison for {{ vnc_user.username }}
+          ansible.builtin.shell:
+            cmd: echo "{{ vnc_user.password }}" | {{ tigervnc_passwd_bin }} -f > "/tmp/vnc_passwd_temp_{{ vnc_user.username }}"
+          become: true
+          no_log: true
+          changed_when: false
+          when: passwd_file_stat.stat.exists
+
+        - name: Get checksum of newly generated password file for {{ vnc_user.username }}
+          ansible.builtin.stat:
+            path: "/tmp/vnc_passwd_temp_{{ vnc_user.username }}"
+            get_checksum: true
+            checksum_algorithm: sha256
+          register: new_passwd_stat
+          become: true
+          when: passwd_file_stat.stat.exists
+
+        - name: Clean up temporary password file for {{ vnc_user.username }}
+          ansible.builtin.file:
+            path: "/tmp/vnc_passwd_temp_{{ vnc_user.username }}"
+            state: absent
+          become: true
+          when: passwd_file_stat.stat.exists
+
+        - name: Determine if password needs update for {{ vnc_user.username }}
+          ansible.builtin.set_fact:
+            password_needs_update: "{{ not passwd_file_stat.stat.exists or passwd_file_stat.stat.checksum != new_passwd_stat.stat.checksum }}"
+
+        - name: Generate password file for {{ vnc_user.username }}
+          ansible.builtin.shell:
+            cmd: echo "{{ vnc_user.password }}" | {{ tigervnc_passwd_bin }} -f > "/home/{{ vnc_user.username }}/.config/tigervnc/passwd"
+          become: true
+          no_log: true
+          when: password_needs_update | bool
+          notify: Restart TigerVNC
+
+        - name: Set correct permissions on password file for {{ vnc_user.username }}
+          ansible.builtin.file:
+            path: "/home/{{ vnc_user.username }}/.config/tigervnc/passwd"
+            owner: "{{ vnc_user.username }}"
+            group: "{{ vnc_user.username }}"
+            mode: "0600"
+          become: true

@@ -1,0 +1,34 @@
+---
+- name: "Verify service for user {{ vnc_user.username }} on display :{{ vnc_user.display }}"
+  vars:
+    service_enabled: "{{ vnc_user.service_enabled | default(tigervnc_default_service_enabled) }}"
+    service_name: "vncserver@{{ vnc_user.display }}.service"
+  block:
+    - name: "Get service info for {{ vnc_user.username }}"
+      ansible.builtin.systemd_service:
+        name: "{{ service_name }}"
+      register: user_service_info
+      become: true
+
+    - name: "Assert service enabled state for {{ vnc_user.username }}"
+      ansible.builtin.assert:
+        that:
+          - user_service_info.status.UnitFileState == ('enabled' if service_enabled else 'disabled')
+        fail_msg: "Service for {{ vnc_user.username }} enabled state does not match (expected: {{ 'enabled' if service_enabled else 'disabled' }})"
+        success_msg: "Service for {{ vnc_user.username }} enabled state is correct"
+
+    - name: "Assert service running state for {{ vnc_user.username }}"
+      ansible.builtin.assert:
+        that:
+          - user_service_info.status.ActiveState == 'active'
+        fail_msg: "Service for {{ vnc_user.username }} is not running"
+        success_msg: "Service for {{ vnc_user.username }} is running"
+      when: service_enabled | bool
+
+    - name: "Assert service stopped for {{ vnc_user.username }}"
+      ansible.builtin.assert:
+        that:
+          - user_service_info.status.ActiveState in ['inactive', 'failed']
+        fail_msg: "Service for {{ vnc_user.username }} is running but should be stopped"
+        success_msg: "Service for {{ vnc_user.username }} is stopped as expected"
+      when: not (service_enabled | bool)

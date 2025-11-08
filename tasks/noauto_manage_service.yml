@@ -1,0 +1,28 @@
+---
+- name: "Manage VNC service for user {{ vnc_user.username }} on display :{{ vnc_user.display }}"
+  vars:
+    service_enabled: "{{ vnc_user.service_enabled | default(tigervnc_default_service_enabled) }}"
+    service_name: "vncserver@{{ vnc_user.display }}.service"
+  block:
+    - name: "Ensure VNC service is enabled/disabled for {{ vnc_user.username }}"
+      ansible.builtin.service:
+        name: "{{ service_name }}"
+        enabled: "{{ service_enabled }}"
+      ignore_errors: "{{ ansible_check_mode }}"
+      become: true
+
+    - name: "Ensure VNC service is started for {{ vnc_user.username }}"
+      ansible.builtin.service:
+        name: "{{ service_name }}"
+        state: started
+      ignore_errors: "{{ ansible_check_mode }}"
+      when: service_enabled | bool
+      become: true
+
+    - name: "Ensure VNC service is stopped for {{ vnc_user.username }}"
+      ansible.builtin.service:
+        name: "{{ service_name }}"
+        state: stopped
+      ignore_errors: "{{ ansible_check_mode }}"
+      when: not (service_enabled | bool)
+      become: true

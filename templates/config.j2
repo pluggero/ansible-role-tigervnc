@@ -1,10 +1,10 @@
 {{ ansible_managed | comment }}
 
-session={{ tigervnc_config_session }}
-{% if tigervnc_config_localhost %}localhost
+session={{ user_session }}
+{% if user_localhost %}localhost
 {% endif %}
-securitytypes={{ tigervnc_config_securitytypes }}
-{% if tigervnc_config_alwaysshared %}alwaysshared{% endif %}
-{% for line in tigervnc_config_additional %}
+securitytypes={{ user_securitytypes }}
+{% if user_alwaysshared %}alwaysshared{% endif %}
+{% for line in user_config_additional %}
 {{ line }}
 {% endfor %}

@@ -1,0 +1,73 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+
+# tigervnc_session - Manage VNC session for a specific display
+# This script determines the user for a given display and starts/stops the VNC server
+# in that user's context with proper environment variables set.
+
+PROG=$(basename "$0")
+USERSFILE="/etc/tigervnc/vncserver.users"
+WRAPPER="/usr/local/bin/tigervnc_wrapper"
+
+usage() {
+    echo "Usage: $PROG [-kill] DISPLAY"
+    echo "  DISPLAY: Display number (e.g., 1, 2, 3)"
+    echo "  -kill: Kill the VNC server instead of starting it"
+    exit 1
+}
+
+# Parse arguments
+KILL_MODE=0
+DISPLAY=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -kill)
+            KILL_MODE=1
+            shift
+            ;;
+        *)
+            DISPLAY="$1"
+            shift
+            ;;
+    esac
+done
+
+# Validate display argument
+if [ -z "$DISPLAY" ]; then
+    echo "$PROG: No display number specified" >&2
+    usage
+fi
+
+# Remove leading colon if present
+DISPLAY="${DISPLAY#:}"
+
+# Check if vncserver.users file exists
+if [ ! -f "$USERSFILE" ]; then
+    echo "$PROG: User mapping file not found: $USERSFILE" >&2
+    exit 1
+fi
+
+# Find the user for this display
+USER=$(grep "^[[:space:]]*:${DISPLAY}=" "$USERSFILE" | head -1 | cut -d= -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+if [ -z "$USER" ]; then
+    echo "$PROG: No user configured for display :$DISPLAY in $USERSFILE" >&2
+    exit 1
+fi
+
+# Verify user exists on the system
+if ! id "$USER" >/dev/null 2>&1; then
+    echo "$PROG: User '$USER' does not exist on this system" >&2
+    exit 1
+fi
+
+# Execute the wrapper as the target user with full login environment
+# The -l flag ensures HOME and other environment variables are set correctly
+if [ $KILL_MODE -eq 1 ]; then
+    # Kill mode: stop the VNC server
+    exec runuser -l "$USER" -c "$WRAPPER -kill :$DISPLAY"
+else
+    # Start mode: start the VNC server in foreground
+    exec runuser -l "$USER" -c "$WRAPPER :$DISPLAY -fg"
+fi

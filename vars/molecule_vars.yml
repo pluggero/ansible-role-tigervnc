@@ -1,0 +1,18 @@
+---
+tigervnc_users:
+  - username: vagrant
+    display: 1
+    password: ""
+    session_command: "xterm"
+    localhost: true
+    securitytypes: "none"
+    alwaysshared: true
+    service_enabled: true
+  - username: testuser
+    display: 2
+    password: "test1234"
+    session_command: "xterm"
+    localhost: true
+    securitytypes: "vncauth"
+    alwaysshared: false
+    service_enabled: true

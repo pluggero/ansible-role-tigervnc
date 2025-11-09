@@ -46,6 +46,15 @@
         group: root
       become: true
 
+    - name: Deploy TigerVNC session manager script
+      ansible.builtin.template:
+        src: tigervnc_session.j2
+        dest: /usr/local/bin/tigervnc_session
+        mode: "0755"
+        owner: root
+        group: root
+      become: true
+
     - name: Ensure system configuration directory exists
       ansible.builtin.file:
         path: /etc/tigervnc

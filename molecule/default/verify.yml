@@ -53,80 +53,14 @@
           loop_control:
             label: "{{ item.item }}"
 
-    - name: Verify TigerVNC Configuration
+    - name: Verify Multi-User Configuration
       tags: [verify_configuration]
       block:
-        - name: Check config directory exists
-          ansible.builtin.stat:
-            path: "{{ tigervnc_config_dir }}"
-          register: tigervnc_config_dir_stat
-
-        - name: Assert config directory exists with correct permissions
-          ansible.builtin.assert:
-            that:
-              - tigervnc_config_dir_stat.stat.exists
-              - tigervnc_config_dir_stat.stat.isdir
-              - tigervnc_config_dir_stat.stat.mode == '0744'
-            fail_msg: "Config directory {{ tigervnc_config_dir }} is missing or has incorrect permissions"
-            success_msg: "Config directory {{ tigervnc_config_dir }} exists with correct permissions"
-
-        - name: Check config file exists
-          ansible.builtin.stat:
-            path: "{{ tigervnc_config_file }}"
-          register: tigervnc_config_file_stat
-
-        - name: Assert config file exists with correct permissions
-          ansible.builtin.assert:
-            that:
-              - tigervnc_config_file_stat.stat.exists
-              - tigervnc_config_file_stat.stat.isreg
-              - tigervnc_config_file_stat.stat.mode == '0755'
-            fail_msg: "Config file {{ tigervnc_config_file }} is missing or has incorrect permissions"
-            success_msg: "Config file {{ tigervnc_config_file }} exists with correct permissions"
-
-        - name: Check xstartup file exists
-          ansible.builtin.stat:
-            path: "{{ tigervnc_config_dir }}/xstartup"
-          register: tigervnc_xstartup_stat
-
-        - name: Assert xstartup file exists with correct permissions
-          ansible.builtin.assert:
-            that:
-              - tigervnc_xstartup_stat.stat.exists
-              - tigervnc_xstartup_stat.stat.isreg
-              - tigervnc_xstartup_stat.stat.mode == '0755'
-            fail_msg: "xstartup file is missing or has incorrect permissions"
-            success_msg: "xstartup file exists with correct permissions"
-
-        - name: Verify config file content
-          ansible.builtin.slurp:
-            path: "{{ tigervnc_config_file }}"
-          register: tigervnc_config_content
-
-        - name: Assert config file contains expected settings
-          ansible.builtin.assert:
-            that:
-              - "'session=' + tigervnc_config_session in tigervnc_config_content.content | b64decode"
-              - "tigervnc_config_localhost | bool == ('localhost' in tigervnc_config_content.content | b64decode)"
-              - "'securitytypes=' + tigervnc_config_securitytypes in tigervnc_config_content.content | b64decode"
-              - "tigervnc_config_alwaysshared | bool == ('alwaysshared' in tigervnc_config_content.content | b64decode)"
-            fail_msg: "Config file is missing expected settings"
-            success_msg: "Config file contains all expected settings"
-
-        - name: Check VNC password file when password is set
-          ansible.builtin.stat:
-            path: "{{ tigervnc_config_dir }}/passwd"
-          register: tigervnc_passwd_stat
-          when: tigervnc_password | length > 0
-
-        - name: Assert password file exists with secure permissions when password is set
-          ansible.builtin.assert:
-            that:
-              - tigervnc_passwd_stat.stat.exists
-              - tigervnc_passwd_stat.stat.mode == '0600'
-            fail_msg: "Password file is missing or has insecure permissions"
-            success_msg: "Password file exists with secure permissions (0600)"
-          when: tigervnc_password | length > 0
+        - name: Verify configuration for each user
+          ansible.builtin.include_tasks: "../../tasks/noauto_verify_user.yml"
+          loop: "{{ tigervnc_users }}"
+          loop_control:
+            loop_var: vnc_user
 
         - name: Check vncserver.users file exists
           ansible.builtin.stat:
@@ -141,73 +75,47 @@
             fail_msg: "vncserver.users file is missing"
             success_msg: "vncserver.users file exists"
 
-        - name: Verify user to display mapping in vncserver.users
+        - name: Verify user to display mappings
           ansible.builtin.lineinfile:
             path: /etc/tigervnc/vncserver.users
-            line: ":{{ tigervnc_display }}={{ tigervnc_user }}"
+            line: ":{{ item.display }}={{ item.username }}"
             state: present
           check_mode: true
-          register: tigervnc_user_mapping
+          register: tigervnc_user_mappings
+          loop: "{{ tigervnc_users }}"
           become: true
 
-        - name: Assert user to display mapping is present
+        - name: Assert all user to display mappings are present
           ansible.builtin.assert:
             that:
-              - not tigervnc_user_mapping.changed
-            fail_msg: "User to display mapping ':{{ tigervnc_display }}={{ tigervnc_user }}' is missing from vncserver.users"
-            success_msg: "User to display mapping is correctly configured"
+              - not item.changed
+            fail_msg: "User to display mapping ':{{ item.item.display }}={{ item.item.username }}' is missing"
+            success_msg: "User to display mapping for {{ item.item.username }} is correct"
+          loop: "{{ tigervnc_user_mappings.results }}"
+          loop_control:
+            label: "{{ item.item.username }}"
 
     - name: Verify TigerVNC Service Configuration
       tags: [verify_service]
-      when: tigervnc_service_manage | bool
       block:
-        - name: Check systemd service file exists
+        - name: Check systemd template service file exists
           ansible.builtin.stat:
-            path: "/etc/systemd/system/{{ tigervnc_service_name }}"
-          register: tigervnc_service_file_stat
+            path: "/etc/systemd/system/vncserver@.service"
+          register: tigervnc_template_service_stat
           become: true
 
-        - name: Assert systemd service file exists
+        - name: Assert systemd template service file exists
           ansible.builtin.assert:
             that:
-              - tigervnc_service_file_stat.stat.exists
-            fail_msg: "Systemd service file {{ tigervnc_service_name }} is missing"
-            success_msg: "Systemd service file {{ tigervnc_service_name }} exists"
+              - tigervnc_template_service_stat.stat.exists
+            fail_msg: "Systemd template service file vncserver@.service is missing"
+            success_msg: "Systemd template service file vncserver@.service exists"
 
-        - name: Get service enabled state
-          ansible.builtin.systemd_service:
-            name: "{{ tigervnc_service_name }}"
-          register: tigervnc_service_info
-          become: true
-
-        - name: Assert service enabled state matches configuration
-          ansible.builtin.assert:
-            that:
-              - tigervnc_service_info.status.UnitFileState == ('enabled' if tigervnc_service_enabled else 'disabled')
-            fail_msg: "Service enabled state does not match expected configuration (expected: {{ 'enabled' if tigervnc_service_enabled else 'disabled' }})"
-            success_msg: "Service enabled state matches configuration"
-
-        - name: Get service running state
-          ansible.builtin.systemd_service:
-            name: "{{ tigervnc_service_name }}"
-          register: tigervnc_service_status
-          become: true
-
-        - name: Assert service running state matches configuration when enabled
-          ansible.builtin.assert:
-            that:
-              - tigervnc_service_status.status.ActiveState == 'active'
-            fail_msg: "Service is not running but should be (enabled: {{ tigervnc_service_enabled }})"
-            success_msg: "Service is running as expected"
-          when: tigervnc_service_enabled | bool
-
-        - name: Assert service is stopped when disabled
-          ansible.builtin.assert:
-            that:
-              - tigervnc_service_status.status.ActiveState in ['inactive', 'failed']
-            fail_msg: "Service is running but should be stopped (enabled: {{ tigervnc_service_enabled }})"
-            success_msg: "Service is stopped as expected"
-          when: not (tigervnc_service_enabled | bool)
+        - name: Verify service for each user
+          ansible.builtin.include_tasks: "../../tasks/noauto_verify_service.yml"
+          loop: "{{ tigervnc_users }}"
+          loop_control:
+            loop_var: vnc_user
 
     - name: Verify Package Dependencies
       tags: [verify_dependencies]

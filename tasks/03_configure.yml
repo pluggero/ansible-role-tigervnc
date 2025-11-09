@@ -1,55 +1,23 @@
 ---
-- name: Configure tigervnc
+- name: Configure tigervnc for multiple users
   block:
-    - name: Ensure config folder exists
+    - name: Ensure system config directory exists
       ansible.builtin.file:
-        path: "{{ tigervnc_config_dir }}"
+        path: /etc/tigervnc
         state: directory
-        mode: "0744"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-
-    - name: Add tigervnc config file
-      ansible.builtin.template:
-        src: "config.j2"
-        dest: "{{ tigervnc_config_file }}"
         mode: "0755"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-      notify: Restart TigerVNC
+      become: true
 
-    - name: Add tigervnc startup config file
+    - name: Configure VNC for each user
+      ansible.builtin.include_tasks: noauto_configure_user.yml
+      loop: "{{ tigervnc_users }}"
+      loop_control:
+        loop_var: vnc_user
+
+    - name: Configure vncserver.users file
       ansible.builtin.template:
-        src: "xstartup.j2"
-        dest: "{{ tigervnc_config_dir }}/xstartup"
-        mode: "0755"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-      notify: Restart TigerVNC
-
-    - name: Set VNC password (hashed)
-      when: tigervnc_password | length > 0
-      block:
-        - name: Generate passwd file in memory
-          ansible.builtin.command:
-            cmd: "vncpasswd -f"
-            stdin: "{{ tigervnc_password }}\n{{ tigervnc_password }}\n"
-          register: tigervnc_passwd_cmd
-          no_log: true
-          changed_when: false
-
-        - name: Write password in config file
-          ansible.builtin.copy:
-            dest: "{{ tigervnc_config_dir }}/passwd"
-            content: "{{ tigervnc_passwd_cmd.stdout }}"
-            owner: "{{ ansible_user }}"
-            group: "{{ ansible_group }}"
-            mode: "0600"
-          notify: Restart TigerVNC
-
-    - name: Map user to display
-      ansible.builtin.lineinfile:
-        path: /etc/tigervnc/vncserver.users
-        line: ":{{ tigervnc_display }}={{ tigervnc_user }}"
+        src: vncserver.users.j2
+        dest: /etc/tigervnc/vncserver.users
+        mode: "0644"
       become: true
       notify: Restart TigerVNC

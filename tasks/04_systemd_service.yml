@@ -1,47 +1,24 @@
 ---
-- name: Configure systemd service for TigerVNC
+- name: Configure systemd services for TigerVNC multi-user
   block:
-    - name: Ensure systemd service file exists
+    - name: Ensure systemd template service file exists
       ansible.builtin.template:
         src: vncserver.service.j2
-        dest: "/etc/systemd/system/{{ tigervnc_service_name }}"
+        dest: "/etc/systemd/system/vncserver@.service"
         mode: "0744"
       become: true
       notify: Restart TigerVNC
 
-    - name: Ensure handlers are notified now to systemd conflicts
+    - name: Ensure handlers are notified now to avoid systemd conflicts
       ansible.builtin.meta: flush_handlers
 
     - name: Reload systemd daemon to recognize service file
       ansible.builtin.systemd_service:
         daemon_reload: true
-      when: tigervnc_service_manage | bool
       become: true
 
-    - name: Ensure TigerVNC service is enabled/disabled as configured
-      ansible.builtin.service:
-        name: "{{ tigervnc_service_name }}"
-        enabled: "{{ tigervnc_service_enabled }}"
-      ignore_errors: "{{ ansible_check_mode }}"
-      when: tigervnc_service_manage | bool
-      become: true
-
-    - name: Ensure TigerVNC service is started when enabled
-      ansible.builtin.service:
-        name: "{{ tigervnc_service_name }}"
-        state: started
-      ignore_errors: "{{ ansible_check_mode }}"
-      when:
-        - tigervnc_service_manage | bool
-        - tigervnc_service_enabled | bool
-      become: true
-
-    - name: Ensure TigerVNC service is stopped when disabled
-      ansible.builtin.service:
-        name: "{{ tigervnc_service_name }}"
-        state: stopped
-      ignore_errors: "{{ ansible_check_mode }}"
-      when:
-        - tigervnc_service_manage | bool
-        - not (tigervnc_service_enabled | bool)
-      become: true
+    - name: Manage VNC service for each user
+      ansible.builtin.include_tasks: noauto_manage_service.yml
+      loop: "{{ tigervnc_users }}"
+      loop_control:
+        loop_var: vnc_user

@@ -3,4 +3,4 @@
 {{ ansible_managed | comment }}
 
 cd "$HOME" || exit 1
-exec dbus-launch --exit-with-session {{ tigervnc_session_command }}
+exec dbus-launch --exit-with-session {{ user_session_command }}

@@ -1,0 +1,62 @@
+---
+- name: "Check config directory - {{ vnc_user.username }}"
+  ansible.builtin.stat:
+    path: "/home/{{ vnc_user.username }}/.config/tigervnc"
+  register: user_config_dir_stat
+  become: true
+
+- name: "Assert config directory exists - {{ vnc_user.username }}"
+  ansible.builtin.assert:
+    that:
+      - user_config_dir_stat.stat.exists
+      - user_config_dir_stat.stat.isdir
+      - user_config_dir_stat.stat.mode == '0744'
+    fail_msg: "Config directory for {{ vnc_user.username }} is missing or has incorrect permissions"
+    success_msg: "Config directory for {{ vnc_user.username }} exists with correct permissions"
+
+- name: "Check config file - {{ vnc_user.username }}"
+  ansible.builtin.stat:
+    path: "/home/{{ vnc_user.username }}/.config/tigervnc/config"
+  register: user_config_file_stat
+  become: true
+
+- name: "Assert config file exists - {{ vnc_user.username }}"
+  ansible.builtin.assert:
+    that:
+      - user_config_file_stat.stat.exists
+      - user_config_file_stat.stat.isreg
+      - user_config_file_stat.stat.mode == '0755'
+    fail_msg: "Config file for {{ vnc_user.username }} is missing or has incorrect permissions"
+    success_msg: "Config file for {{ vnc_user.username }} exists with correct permissions"
+
+- name: "Check xstartup file - {{ vnc_user.username }}"
+  ansible.builtin.stat:
+    path: "/home/{{ vnc_user.username }}/.config/tigervnc/xstartup"
+  register: user_xstartup_stat
+  become: true
+
+- name: "Assert xstartup file exists - {{ vnc_user.username }}"
+  ansible.builtin.assert:
+    that:
+      - user_xstartup_stat.stat.exists
+      - user_xstartup_stat.stat.isreg
+      - user_xstartup_stat.stat.mode == '0755'
+    fail_msg: "xstartup file for {{ vnc_user.username }} is missing or has incorrect permissions"
+    success_msg: "xstartup file for {{ vnc_user.username }} exists with correct permissions"
+
+- name: "Check password file - {{ vnc_user.username }}"
+  when: vnc_user.password is defined and vnc_user.password | length > 0
+  block:
+    - name: "Check password file exists - {{ vnc_user.username }}"
+      ansible.builtin.stat:
+        path: "/home/{{ vnc_user.username }}/.config/tigervnc/passwd"
+      register: user_passwd_stat
+      become: true
+
+    - name: "Assert password file exists with secure permissions - {{ vnc_user.username }}"
+      ansible.builtin.assert:
+        that:
+          - user_passwd_stat.stat.exists
+          - user_passwd_stat.stat.mode == '0600'
+        fail_msg: "Password file for {{ vnc_user.username }} is missing or has insecure permissions"
+        success_msg: "Password file for {{ vnc_user.username }} exists with secure permissions"

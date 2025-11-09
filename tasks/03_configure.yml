@@ -14,19 +14,10 @@
       loop_control:
         loop_var: vnc_user
 
-    - name: Clear vncserver.users file
-      ansible.builtin.copy:
-        content: "# TigerVNC User Assignment\n"
+    - name: Configure vncserver.users file
+      ansible.builtin.template:
+        src: vncserver.users.j2
         dest: /etc/tigervnc/vncserver.users
         mode: "0644"
-      become: true
-
-    - name: Map users to displays in vncserver.users
-      ansible.builtin.lineinfile:
-        path: /etc/tigervnc/vncserver.users
-        line: ":{{ item.display }}={{ item.username }}"
-        create: true
-        mode: "0644"
-      loop: "{{ tigervnc_users }}"
       become: true
       notify: Restart TigerVNC

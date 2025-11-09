@@ -56,7 +56,9 @@
 
         - name: Generate new password to temporary file for comparison for {{ vnc_user.username }}
           ansible.builtin.shell:
-            cmd: echo "{{ vnc_user.password }}" | {{ tigervnc_passwd_bin }} -f > "/tmp/vnc_passwd_temp_{{ vnc_user.username }}"
+            cmd: set -o pipefail && echo "{{ vnc_user.password }}" | {{ tigervnc_passwd_bin }} -f > "/tmp/vnc_passwd_temp_{{ vnc_user.username }}"
+          args:
+            executable: /bin/bash
           become: true
           no_log: true
           changed_when: false
@@ -76,6 +78,7 @@
             path: "/tmp/vnc_passwd_temp_{{ vnc_user.username }}"
             state: absent
           become: true
+          changed_when: false
           when: passwd_file_stat.stat.exists
 
         - name: Determine if password needs update for {{ vnc_user.username }}
@@ -84,9 +87,12 @@
 
         - name: Generate password file for {{ vnc_user.username }}
           ansible.builtin.shell:
-            cmd: echo "{{ vnc_user.password }}" | {{ tigervnc_passwd_bin }} -f > "/home/{{ vnc_user.username }}/.config/tigervnc/passwd"
+            cmd: set -o pipefail && echo "{{ vnc_user.password }}" | {{ tigervnc_passwd_bin }} -f > "/home/{{ vnc_user.username }}/.config/tigervnc/passwd"
+          args:
+            executable: /bin/bash
           become: true
           no_log: true
+          changed_when: true
           when: password_needs_update | bool
           notify: Restart TigerVNC
 

@@ -57,7 +57,7 @@
       tags: [verify_configuration]
       block:
         - name: Verify configuration for each user
-          ansible.builtin.include_tasks: noauto_verify_user.yml
+          ansible.builtin.include_tasks: "../../tasks/noauto_verify_user.yml"
           loop: "{{ tigervnc_users }}"
           loop_control:
             loop_var: vnc_user
@@ -112,7 +112,7 @@
             success_msg: "Systemd template service file vncserver@.service exists"
 
         - name: Verify service for each user
-          ansible.builtin.include_tasks: noauto_verify_service.yml
+          ansible.builtin.include_tasks: "../../tasks/noauto_verify_service.yml"
           loop: "{{ tigervnc_users }}"
           loop_control:
             loop_var: vnc_user

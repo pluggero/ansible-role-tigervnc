@@ -1,10 +1,10 @@
 ---
 - name: Restart TigerVNC
   ansible.builtin.service:
-    name: "{{ tigervnc_service_name }}"
+    name: "vncserver@{{ item.display }}.service"
     state: restarted
+  loop: "{{ tigervnc_users }}"
   ignore_errors: "{{ ansible_check_mode }}"
   when:
-    - tigervnc_service_manage | bool
-    - tigervnc_service_enabled | bool
+    - item.service_enabled | default(tigervnc_default_service_enabled) | bool
   become: true

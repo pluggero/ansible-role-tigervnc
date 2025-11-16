@@ -6,7 +6,7 @@ driver:
   name: vagrant
 platforms:
   - name: instance
-    box: "pluggero/${MOLECULE_VAGRANT_BOX:-debian12}-ansible"
+    box: "pluggero/${MOLECULE_DISTRO:-debian12}-ansible"
     box_version: "${MOLECULE_VAGRANT_BOX_VERSION:-1.4.0}"
 provisioner:
   name: ansible

@@ -53,7 +53,6 @@ jobs:
           - vagrant_box: archlinux
             vagrant_box_version: "2025.11.23"
     env:
-      VBOX_BRANCH: "7.1"
       VBOX_VERSION: "7.1.12"
       VBOX_DEB_DISTRO: "Ubuntu"
       VBOX_DEB_CODENAME: "noble"
@@ -92,6 +91,7 @@ jobs:
 
       - name: Construct and validate VBOX_DEB_URL
         run: |
+          export VBOX_BRANCH="${VBOX_VERSION%.*}"
           export VBOX_DEB_FILE="virtualbox-${VBOX_BRANCH}_${VBOX_VERSION}-${VBOX_BUILD_ID}~${VBOX_DEB_DISTRO}~${VBOX_DEB_CODENAME}_amd64.deb"
           export VBOX_DEB_URL="https://download.virtualbox.org/virtualbox/${VBOX_VERSION}/${VBOX_DEB_FILE}"
           echo "Constructed URL: $VBOX_DEB_URL"

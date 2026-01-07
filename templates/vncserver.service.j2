@@ -1,16 +1,18 @@
 {{ ansible_managed | comment }}
 
 [Unit]
-Description=Remote desktop service (VNC) 
+Description=Remote desktop service (VNC) for display :%i
 After=network.target systemd-user-sessions.service
 
 [Service]
 Type=simple
-User={{ tigervnc_user }}
-ExecStartPre=-/usr/local/bin/tigervnc_wrapper -kill :%i
-ExecStart=/usr/local/bin/tigervnc_wrapper :%i -fg
-ExecStop=/usr/local/bin/tigervnc_wrapper -kill :%i
-PIDFile={{ tigervnc_config_dir }}/{{ ansible_fqdn }}:%i.pid
+# User is determined by /etc/tigervnc/vncserver.users mapping
+# The tigervnc_session script reads the mapping and executes the VNC server
+# in the correct user context with proper environment (including HOME)
+ExecStartPre=-/usr/local/bin/tigervnc_session -kill %i
+ExecStart=/usr/local/bin/tigervnc_session %i
+ExecStop=/usr/local/bin/tigervnc_session -kill %i
+PIDFile=/home/%u/.config/tigervnc/{{ ansible_fqdn }}:%i.pid
 Restart=on-failure
 RestartSec=5
 

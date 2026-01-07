@@ -1,0 +1,6 @@
+# TigerVNC User Assignment
+{{ ansible_managed | comment }}
+
+{% for user in tigervnc_users %}
+:{{ user.display }}={{ user.username }}
+{% endfor %}

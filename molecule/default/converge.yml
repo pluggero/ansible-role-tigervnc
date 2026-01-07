@@ -2,10 +2,8 @@
 - name: Converge
   hosts: all
 
-  vars:
-    ansible_user: vagrant
-    tigervnc_service_enabled: true
-    tigervnc_service_manage: true
+  vars_files:
+    - ../../vars/molecule_vars.yml
 
   pre_tasks:
     - name: Update apt cache
@@ -14,6 +12,13 @@
         cache_valid_time: 3600
       become: true
       when: ansible_os_family == 'Debian'
+
+    - name: Create test user
+      ansible.builtin.user:
+        name: testuser
+        state: present
+        create_home: true
+      become: true
 
   roles:
     - role: pluggero.tigervnc

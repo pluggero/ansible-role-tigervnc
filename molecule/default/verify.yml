@@ -6,6 +6,11 @@
   vars_files:
     - ../../defaults/main.yml
 
+  vars:
+    ansible_user: ansible
+    ansible_password: ansible
+    ansible_become_password: ansible
+
   tasks:
     - name: Include OS-specific variables
       ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"

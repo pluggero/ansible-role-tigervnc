@@ -36,10 +36,8 @@ jobs:
           yamllint .
 
       - name: Run ansible-lint
-        uses: ansible/ansible-lint@7f6abc5ef97d0fb043a0f3d416dfbc74399fbda0 # v26.1.1
-        with:
-          working_directory: "pluggero.tigervnc"
-          requirements_file: "requirements.yml"
+        run: |
+          ansible-lint .
 
   molecule:
     name: Molecule
@@ -70,6 +68,12 @@ jobs:
 
       - name: Install test dependencies
         run: pip3 install -r requirements.txt
+
+      - name: Unload KVM kernel modules
+        run: |
+          echo "Unloading KVM kernel modules to avoid conflicts with VirtualBox..."
+          sudo modprobe -r kvm_intel kvm_amd kvm || true
+          lsmod | grep kvm || echo "KVM modules successfully unloaded"
 
       - name: Get VirtualBox build ID
         id: get-build-id

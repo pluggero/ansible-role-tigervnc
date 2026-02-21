@@ -1,6 +1,6 @@
 ---
 # TigerVNC Installation Settings
-tigervnc_version: "1.15.0"
+tigervnc_version: "1.16.0"
 tigervnc_install_method: "dynamic"
 tigervnc_force_install: false
 

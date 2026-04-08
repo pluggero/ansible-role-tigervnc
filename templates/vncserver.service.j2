@@ -12,7 +12,6 @@ Type=simple
 ExecStartPre=-/usr/local/bin/tigervnc_session -kill %i
 ExecStart=/usr/local/bin/tigervnc_session %i
 ExecStop=/usr/local/bin/tigervnc_session -kill %i
-PIDFile=/home/%u/.config/tigervnc/{{ ansible_fqdn }}:%i.pid
 Restart=on-failure
 RestartSec=5
 

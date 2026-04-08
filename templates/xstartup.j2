@@ -3,4 +3,20 @@
 {{ ansible_managed | comment }}
 
 cd "$HOME" || exit 1
-exec dbus-launch --exit-with-session {{ user_session_command }}
+
+# Derive the D-Bus session bus address from the well-known systemd user socket.
+# This socket is created by dbus.socket in the user's systemd session and is
+# available before dbus-launch runs. Required for systemctl --user to work.
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export XDG_RUNTIME_DIR
+DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+export DBUS_SESSION_BUS_ADDRESS
+
+# Update the systemd user manager and D-Bus activation environment to point
+# to this VNC display, so user units started from the VNC session use the
+# correct display.
+systemctl --user set-environment DISPLAY="$DISPLAY"
+systemctl --user unset-environment XAUTHORITY
+dbus-update-activation-environment --systemd DISPLAY 2>/dev/null || true
+
+dbus-launch --exit-with-session {{ user_session_command }}

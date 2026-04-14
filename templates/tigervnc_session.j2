@@ -64,13 +64,19 @@ fi
 
 # Execute the wrapper as the target user via a clean transient systemd unit.
 # systemd-run provides a fully isolated environment (clean env, PAM session)
-# without inheriting host X session variables (DISPLAY, XAUTHORITY, etc.).
+# PAMName=tigervnc uses TigerVNC's own /etc/pam.d/tigervnc service definition
+# rather than the console-login PAM stack, avoiding unintended capabilities
+# from admin customisations to /etc/pam.d/login.
+# /bin/sh -l opens a POSIX login shell so that /etc/profile and
+# /etc/profile.d/*.sh (as well as ~/.profile) are sourced before the wrapper
+# runs. The immediate exec replaces the shell process with the wrapper, so no
+# extra shell process is left running.
 if [ $KILL_MODE -eq 1 ]; then
     exec systemd-run --uid="$USER" --wait --pty --collect \
-        --property=PAMName=login \
-        "$WRAPPER" -kill ":$VNC_DISPLAY"
+        --property=PAMName=tigervnc \
+        /bin/sh -l -c "exec \"$WRAPPER\" -kill \":$VNC_DISPLAY\""
 else
     exec systemd-run --uid="$USER" --wait --pty --collect \
-        --property=PAMName=login \
-        "$WRAPPER" ":$VNC_DISPLAY" -fg
+        --property=PAMName=tigervnc \
+        /bin/sh -l -c "exec \"$WRAPPER\" \":$VNC_DISPLAY\" -fg"
 fi

@@ -1,0 +1,21 @@
+{{ ansible_managed | comment("c") }}
+
+// Allow members of the sudo group to perform power management actions
+// without interactive authentication. Required because VNC sessions started
+// via systemd-run do not create a logind seat session, which polkit normally
+// requires to grant these privileges interactively.
+polkit.addRule(function(action, subject) {
+    var powerActions = [
+        "org.freedesktop.login1.power-off",
+        "org.freedesktop.login1.power-off-multiple-sessions",
+        "org.freedesktop.login1.reboot",
+        "org.freedesktop.login1.reboot-multiple-sessions",
+        "org.freedesktop.login1.suspend",
+        "org.freedesktop.login1.suspend-multiple-sessions"
+    ];
+
+    if (powerActions.indexOf(action.id) !== -1 &&
+        subject.isInGroup("sudo")) {
+        return polkit.Result.YES;
+    }
+});

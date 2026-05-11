@@ -1,0 +1,20 @@
+---
+- name: Configure polkit rules for power management in VNC sessions
+  block:
+    - name: Ensure polkit rules directory exists
+      ansible.builtin.file:
+        path: /etc/polkit-1/rules.d
+        state: directory
+        mode: "0755"
+        owner: root
+        group: root
+      become: true
+
+    - name: Deploy polkit power management rule
+      ansible.builtin.template:
+        src: polkit_power_management.rules.j2
+        dest: /etc/polkit-1/rules.d/10-power-management.rules
+        mode: "0644"
+        owner: root
+        group: root
+      become: true

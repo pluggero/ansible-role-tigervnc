@@ -4,6 +4,16 @@
 
 cd "$HOME" || exit 1
 
+# Source /etc/profile.d scripts to load environment variables (e.g. PATH
+# additions for cargo, go, python tools) that are not loaded because
+# systemd-run does not spawn a login shell.
+if [ -d /etc/profile.d ]; then
+    for f in /etc/profile.d/*.sh; do
+        [ -r "$f" ] && . "$f"
+    done
+    unset f
+fi
+
 # Derive the D-Bus session bus address from the well-known systemd user socket.
 # This socket is created by dbus.socket in the user's systemd session and is
 # available before dbus-launch runs. Required for systemctl --user to work.

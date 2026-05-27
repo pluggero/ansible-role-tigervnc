@@ -1,0 +1,20 @@
+{{ ansible_managed | comment("c") }}
+
+// Allow members of the sudo group to perform NetworkManager actions
+// without interactive authentication. Required because VNC sessions started
+// via systemd-run do not create a logind seat session, which polkit normally
+// requires to grant these privileges interactively.
+polkit.addRule(function(action, subject) {
+    var nmActions = [
+        "org.freedesktop.NetworkManager.network-control",
+        "org.freedesktop.NetworkManager.settings.modify.system",
+        "org.freedesktop.NetworkManager.settings.modify.own",
+        "org.freedesktop.NetworkManager.wifi.share.protected",
+        "org.freedesktop.NetworkManager.wifi.share.open"
+    ];
+
+    if (nmActions.indexOf(action.id) !== -1 &&
+        subject.isInGroup("sudo")) {
+        return polkit.Result.YES;
+    }
+});

@@ -19,4 +19,4 @@ systemctl --user set-environment DISPLAY="$DISPLAY"
 systemctl --user unset-environment XAUTHORITY
 dbus-update-activation-environment --systemd DISPLAY 2>/dev/null || true
 
-dbus-launch --exit-with-session {{ user_session_command }}
+exec {{ user_session_command }}

@@ -18,3 +18,12 @@
         owner: root
         group: root
       become: true
+
+    - name: Deploy polkit NetworkManager rule
+      ansible.builtin.template:
+        src: polkit_networkmanager.rules.j2
+        dest: /etc/polkit-1/rules.d/10-networkmanager.rules
+        mode: "0644"
+        owner: root
+        group: root
+      become: true

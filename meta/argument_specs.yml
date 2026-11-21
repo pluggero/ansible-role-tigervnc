@@ -1,0 +1,118 @@
+---
+argument_specs:
+  main:
+    short_description: Install and configure TigerVNC with multi-user session support.
+    description:
+      - Installs TigerVNC binaries and required dependencies on various Linux distributions.
+      - Configures one or more VNC user sessions, each with their own display, startup script and optional password.
+      - Manages the per-user systemd C(vncserver@) service instance.
+    author:
+      - Robin Plugge (@pluggero)
+    options:
+      tigervnc_version:
+        description: The version of TigerVNC to install.
+        type: str
+        default: "1.16.2"
+      tigervnc_install_method:
+        description:
+          - The method used to install TigerVNC.
+          - V(source) installs TigerVNC from source.
+          - V(package) installs the latest version available from the distribution's package manager, ignoring
+            O(tigervnc_version). Falls back to V(source) if TigerVNC is not available in the package manager.
+          - V(dynamic) installs from the package manager if the packaged version matches O(tigervnc_version),
+            otherwise installs from source.
+        type: str
+        default: dynamic
+        choices:
+          - source
+          - package
+          - dynamic
+      tigervnc_force_install:
+        description: Force (re)installation of TigerVNC even if the configured version is already installed.
+        type: bool
+        default: false
+      tigervnc_download_base_url:
+        description: Base URL used to build the download URL for the TigerVNC archive.
+        type: str
+        default: "https://sourceforge.net/projects/tigervnc/files/stable/{{ tigervnc_version }}"
+      tigervnc_archive_name:
+        description: File name of the TigerVNC archive to download.
+        type: str
+        default: "tigervnc-{{ tigervnc_version }}.x86_64.tar.gz"
+      tigervnc_download_url:
+        description: Full URL used to download the TigerVNC archive.
+        type: str
+        default: "{{ tigervnc_download_base_url }}/{{ tigervnc_archive_name }}/download"
+      tigervnc_download_dir:
+        description: Directory the TigerVNC archive is downloaded to.
+        type: str
+        default: "/tmp"
+      tigervnc_install_dir:
+        description: Base directory TigerVNC is installed into when installing from source.
+        type: str
+        default: "/opt"
+      tigervnc_install_path:
+        description: Full installation path of TigerVNC when installing from source.
+        type: str
+        default: "{{ tigervnc_install_dir }}/tigervnc-{{ tigervnc_version }}"
+      tigervnc_users:
+        description: List of users for which a VNC session will be configured.
+        type: list
+        elements: dict
+        default: []
+        options:
+          username:
+            description: The system username the VNC session belongs to.
+            type: str
+            required: true
+          display:
+            description: The VNC display number, for example C(1) for C(:1).
+            type: int
+            required: true
+          password:
+            description: >-
+              VNC password for the session. Must be 6-8 characters, only the first 8 are used due to a VNC
+              protocol limitation (DES encryption).
+            type: str
+            no_log: true
+          session_command:
+            description: The desktop session or application to start. Defaults to O(tigervnc_default_session_command).
+            type: str
+          localhost:
+            description: Whether to listen only on localhost. Defaults to O(tigervnc_default_localhost).
+            type: bool
+          securitytypes:
+            description: Security types to use for the VNC connection. Defaults to O(tigervnc_default_securitytypes).
+            type: str
+          alwaysshared:
+            description: Whether to allow shared connections. Defaults to O(tigervnc_default_alwaysshared).
+            type: bool
+          config_additional:
+            description: Additional configuration lines appended to the user's VNC config.
+            type: list
+            elements: str
+          service_enabled:
+            description: >-
+              Whether to enable and start the systemd service for this user. Defaults to
+              O(tigervnc_default_service_enabled).
+            type: bool
+      tigervnc_default_session_command:
+        description: Default O(tigervnc_users[].session_command) applied when not set for a user.
+        type: str
+        default: "xterm"
+      tigervnc_default_localhost:
+        description: Default O(tigervnc_users[].localhost) applied when not set for a user.
+        type: bool
+        default: true
+      tigervnc_default_securitytypes:
+        description: Default O(tigervnc_users[].securitytypes) applied when not set for a user.
+        type: str
+        default: "none"
+      tigervnc_default_alwaysshared:
+        description: Default O(tigervnc_users[].alwaysshared) applied when not set for a user.
+        type: bool
+        default: true
+      tigervnc_default_service_enabled:
+        description: Default O(tigervnc_users[].service_enabled) applied when not set for a user.
+        type: bool
+        default: false

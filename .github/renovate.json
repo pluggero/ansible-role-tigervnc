@@ -12,13 +12,19 @@
         "pip_requirements"
       ],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "minimumReleaseAge": "7 days"
     },
     {
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["python/cpython"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "matchDatasources": ["github-runners"],
+      "automerge": false
     },
     {
       "matchManagers": [
@@ -31,7 +37,8 @@
       "matchManagers": ["custom.regex"],
       "matchDepNames": ["/^pluggero\\/vagrant-.*-ansible$/"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "minimumReleaseAge": "7 days"
     }
   ],
   "enabledManagers": [
@@ -43,14 +50,22 @@
   "assignees": [
     "pluggero"
   ],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": null,
+    "automerge": false,
+    "labels": ["security"]
+  },
   "customManagers": [
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^defaults/main\\.yml$/"
+        "/^defaults/main\\.yml$/",
+        "/^meta/argument_specs\\.yml$/"
       ],
       "matchStrings": [
-        "tigervnc_version:\\s+\"(?<currentValue>[\\d\\.]+)\""
+        "tigervnc_version:\\s+\"(?<currentValue>[\\d\\.]+)\"",
+        "tigervnc_version:\\n(?:[^\\n]*\\n){0,5}?\\s*default:\\s+\"(?<currentValue>[\\d\\.]+)\""
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "TigerVNC/tigervnc",

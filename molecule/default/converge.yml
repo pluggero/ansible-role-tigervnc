@@ -26,4 +26,4 @@
       become: true
 
   roles:
-    - role: pluggero.tigervnc
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
